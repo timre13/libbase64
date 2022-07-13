@@ -17,6 +17,7 @@ struct Sequence
     uint third  : 6;
     uint fourth : 6;
 } __attribute__((packed));
+static_assert(sizeof(Sequence) == 3, "Struct 'Sequence' has invalid size. Unsupported platform or compiler.");
 
 uint8_t indexToChar(uint index)
 {
@@ -60,6 +61,63 @@ std::string toBase64(const byteArray_t& input)
     return output;
 }
 
+uint charToIndex(uint8_t ch)
+{
+    if (ch >= 'A' && ch <= 'Z')
+        return 0 + ch - 'A';
+    else if (ch >= 'a' && ch <= 'z')
+        return 26 + ch - 'a';
+    else if (ch >= '0' && ch <= '9')
+        return 52 + ch - '0';
+    else if (ch == '+')
+        return 62;
+    else if (ch == '/')
+        return 63;
+
+    throw std::runtime_error{"Invalid Base64 character: '"+std::string{1, (char)ch}+"'"};
+}
+
+byteArray_t fromBase64(const std::string& input)
+{
+    //std::cout << "Decoding: '" << input << "'\n";
+
+    byteArray_t output;
+
+    // TODO: Handle non-padded input
+
+    for (size_t i{}; i < input.size()/4; ++i)
+    {
+        Sequence seq{};
+        if (input[i*4+3] != PADDING_CHAR)
+            seq.first  = charToIndex(input[i*4 + 3]);
+        if (input[i*4+2] != PADDING_CHAR)
+            seq.second = charToIndex(input[i*4 + 2]);
+        seq.third  = charToIndex(input[i*4 + 1]);
+        seq.fourth = charToIndex(input[i*4 + 0]);
+
+        uint8_t val;
+        //if (input[i*4+3] != PADDING_CHAR && input[i*4+2] != PADDING_CHAR)
+        memcpy(&val, (uint8_t*)(&seq)+2, 1);
+        output.push_back(val);
+        //std::cout << "2: " << +val << '\n';
+
+        memcpy(&val, (uint8_t*)(&seq)+1, 1);
+        if (val != 0 || input[i*4+3] != PADDING_CHAR)
+        {
+            output.push_back(val);
+            //std::cout << "1: " << +val << '\n';
+        }
+        memcpy(&val, (uint8_t*)(&seq)+0, 1);
+        if (val != 0 || input[i*4+3] != PADDING_CHAR)
+        {
+            output.push_back(val);
+            //std::cout << "0: " << +val << '\n';
+        }
+    }
+
+    return output;
+}
+
 static bool checkEncoding(const std::string& input, const std::string& expected)
 {
     byteArray_t input_;
@@ -67,9 +125,23 @@ static bool checkEncoding(const std::string& input, const std::string& expected)
     for (char val : input)
         input_.push_back(val);
     const std::string decoded = toBase64(input_);
-    std::cout << "Decoded:  '" << input << "'\nResult:   '" << decoded << "'\nExpected: '" << expected << "'\n";
+    std::cout << "Encoded:  '" << input << "'\nResult:   '" << decoded << "'\nExpected: '" << expected << "'\n";
 
     const bool ok = (decoded == expected);
+    std::cout << (ok ? "\033[92mOK\033[0m" : "\033[91mFAIL\033[0m") << '\n';
+    return ok;
+}
+
+static bool checkDecoding(const std::string& input, const std::string& expected)
+{
+    const byteArray_t output = fromBase64(input);
+    std::string output_;
+    for (uint8_t val : output)
+        output_.push_back(val);
+
+    std::cout << "Decoded:  '" << input << "'\nResult:   '" << output_ << "'\nExpected: '" << expected << "'\n";
+
+    const bool ok = (output_ == expected);
     std::cout << (ok ? "\033[92mOK\033[0m" : "\033[91mFAIL\033[0m") << '\n';
     return ok;
 }
@@ -90,10 +162,20 @@ static constexpr std::string_view testTable[][2] = {
 int main()
 {
     static constexpr size_t testCount = sizeof(testTable)/sizeof(testTable[0]);
+
+    std::cout << std::string(20, '=') << " Encoding " << std::string(20, '=') << '\n';
     for (size_t i{}; i < testCount; ++i)
     {
         assert(checkEncoding(testTable[i][0].data(), testTable[i][1].data()));
     }
+
+    std::cout << std::string(20, '=') << " Decoding " << std::string(20, '=') << '\n';
+    for (size_t i{}; i < testCount; ++i)
+    {
+        assert(checkDecoding(testTable[i][1].data(), testTable[i][0].data()));
+    }
+
+    std::cout << "ALL TESTS PASSED" << '\n';
     
     //const std::string input = "Many hands make light work";
     //byteArray_t input_;
@@ -102,6 +184,14 @@ int main()
     //    input_.push_back(val);
     //const std::string decoded = toBase64(input_);
     //std::cout << decoded << '\n';
+
+
+    //const byteArray_t output = fromBase64("YXN3dWgyMzc4YXNkZmhTREY9KFNEVlMrRSg9KyEiKyEoPVNWTENWP05YKyJRPSgheHluZXI4MnUzcmZzZGZq");
+    //std::string output_;
+    //for (uint8_t val : output)
+    //    output_.push_back(val);
+    //std::cout << "Output: '" << output_ << "'\n";
+
 
     return 0;
 }
