@@ -1,129 +1,17 @@
 #include <iostream>
 #include <stdint.h>
-#include <vector>
-#include <cmath>
 #include <cassert>
-#include <cstring>
 #include <string_view>
-
-#define PADDING_CHAR '='
-
-using byteArray_t = std::vector<uint8_t>;
-
-struct Sequence
-{
-    uint first  : 6;
-    uint second : 6;
-    uint third  : 6;
-    uint fourth : 6;
-} __attribute__((packed));
-static_assert(sizeof(Sequence) == 3, "Struct 'Sequence' has invalid size. Unsupported platform or compiler.");
-
-uint8_t indexToChar(uint index)
-{
-    if (index <= 25)
-        return 'A' + index;
-    else if (index <= 51)
-        return 'a' + (index-26);
-    else if (index <= 61)
-        return '0' + (index-52);
-    else if (index == 62)
-        return '+';
-    else if (index == 63)
-        return '/';
-
-    assert(false);
-    throw std::runtime_error{""};
-}
-
-std::string toBase64(const byteArray_t& input, bool applyPadding=true)
-{
-    std::string output;
-
-    //const size_t outCount = std::ceil(input.size()/3.f*4.f);
-    //std::cout << "Output: " << outCount << " characters\n";
-
-    const size_t end = std::ceil(input.size()/3.f);
-    for (size_t i{}; i < end; i++)
-    {
-        Sequence seq{};
-        if (i*3+2 < input.size())
-            memcpy((uint8_t*)(&seq)+0, input.data()+i*3+2, 1);
-        if (i*3+1 < input.size())
-            memcpy((uint8_t*)(&seq)+1, input.data()+i*3+1, 1);
-        memcpy((uint8_t*)(&seq)+2, input.data()+i*3+0, 1);
-
-        output += indexToChar(seq.fourth);
-        output += indexToChar(seq.third);
-
-        if (seq.second != 0 || i != end-1)
-            output += indexToChar(seq.second);
-        else if (applyPadding)
-            output += PADDING_CHAR;
-
-        if (seq.first != 0 || i != end-1)
-            output += indexToChar(seq.first);
-        else if (applyPadding)
-            output += PADDING_CHAR;
-    }
-
-    return output;
-}
-
-uint charToIndex(uint8_t ch)
-{
-    if (ch >= 'A' && ch <= 'Z')
-        return 0 + ch - 'A';
-    else if (ch >= 'a' && ch <= 'z')
-        return 26 + ch - 'a';
-    else if (ch >= '0' && ch <= '9')
-        return 52 + ch - '0';
-    else if (ch == '+')
-        return 62;
-    else if (ch == '/')
-        return 63;
-
-    throw std::runtime_error{"Invalid Base64 character: '"+std::string{1, (char)ch}+"'"};
-}
-
-byteArray_t fromBase64(const std::string& input)
-{
-    //std::cout << "Decoding: '" << input << "'\n";
-
-    byteArray_t output;
-
-    for (size_t i{}; i < std::ceil(input.size()/4.f); ++i)
-    {
-        Sequence seq{};
-        if (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size())
-            seq.first  = charToIndex(input[i*4 + 3]);
-        if (input[i*4+2] != PADDING_CHAR && i*4+2 < input.size())
-            seq.second = charToIndex(input[i*4 + 2]);
-        seq.third  = charToIndex(input[i*4 + 1]);
-        seq.fourth = charToIndex(input[i*4 + 0]);
-
-        uint8_t val;
-        memcpy(&val, (uint8_t*)(&seq)+2, 1);
-        output.push_back(val);
-
-        memcpy(&val, (uint8_t*)(&seq)+1, 1);
-        if (val != 0 || (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size()))
-            output.push_back(val);
-        memcpy(&val, (uint8_t*)(&seq)+0, 1);
-        if (val != 0 || (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size()))
-            output.push_back(val);
-    }
-
-    return output;
-}
+#include "include/Base64.h"
 
 static bool checkEncoding(const std::string& input, const std::string& expected, bool usePadding)
 {
-    byteArray_t input_;
+    Base64::byteArray_t input_;
     input_.reserve(input.size());
     for (char val : input)
         input_.push_back(val);
-    const std::string decoded = toBase64(input_, usePadding);
+    const std::string decoded = Base64::toBase64(input_, usePadding);
+
     std::cout << "Encoded:  '" << input << "'\nResult:   '" << decoded << "'\nExpected: '" << expected << "'\n";
 
     const bool ok = (decoded == expected);
@@ -133,7 +21,7 @@ static bool checkEncoding(const std::string& input, const std::string& expected,
 
 static bool checkDecoding(const std::string& input, const std::string& expected)
 {
-    const byteArray_t output = fromBase64(input);
+    const Base64::byteArray_t output = Base64::fromBase64(input);
     std::string output_;
     for (uint8_t val : output)
         output_.push_back(val);
