@@ -21,6 +21,6 @@ struct Sequence
 static_assert(sizeof(Sequence) == 3, "Struct 'Sequence' has invalid size. Unsupported platform or compiler.");
 
 std::string encode(const byteArray_t& input, bool applyPadding=true);
-byteArray_t decode(const std::string& input);
+byteArray_t decode(const std::string& input, bool needsPadding=false);
 
 } // namespace Base64

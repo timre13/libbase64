@@ -72,7 +72,7 @@ static uint charToIndex(uint8_t ch)
     throw std::runtime_error{"Invalid Base64 character: '"+std::string{1, (char)ch}+"'"};
 }
 
-byteArray_t decode(const std::string& input)
+byteArray_t decode(const std::string& input, bool needsPadding/*=false*/)
 {
     byteArray_t output;
 
@@ -90,9 +90,13 @@ byteArray_t decode(const std::string& input)
         memcpy(&val, (uint8_t*)(&seq)+2, 1);
         output.push_back(val);
 
+        if (needsPadding && i*4+3 >= input.size())
+            throw std::runtime_error{"Input is not padded properly."};
+
         memcpy(&val, (uint8_t*)(&seq)+1, 1);
         if (val != 0 || (i*4+3 < input.size() && input[i*4+3] != BASE64_PADDING_CHAR))
             output.push_back(val);
+
         memcpy(&val, (uint8_t*)(&seq)+0, 1);
         if (val != 0 || (i*4+3 < input.size() && input[i*4+3] != BASE64_PADDING_CHAR))
             output.push_back(val);
