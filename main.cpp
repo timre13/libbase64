@@ -36,7 +36,7 @@ uint8_t indexToChar(uint index)
     throw std::runtime_error{""};
 }
 
-std::string toBase64(const byteArray_t& input)
+std::string toBase64(const byteArray_t& input, bool applyPadding=true)
 {
     std::string output;
 
@@ -52,10 +52,19 @@ std::string toBase64(const byteArray_t& input)
         if (i*3+1 < input.size())
             memcpy((uint8_t*)(&seq)+1, input.data()+i*3+1, 1);
         memcpy((uint8_t*)(&seq)+2, input.data()+i*3+0, 1);
+
         output += indexToChar(seq.fourth);
         output += indexToChar(seq.third);
-        output += (seq.second == 0 && i == end-1) ? PADDING_CHAR : indexToChar(seq.second);
-        output += (seq.first == 0 && i == end-1) ? PADDING_CHAR : indexToChar(seq.first);
+
+        if (seq.second != 0 || i != end-1)
+            output += indexToChar(seq.second);
+        else if (applyPadding)
+            output += PADDING_CHAR;
+
+        if (seq.first != 0 || i != end-1)
+            output += indexToChar(seq.first);
+        else if (applyPadding)
+            output += PADDING_CHAR;
     }
 
     return output;
@@ -94,23 +103,15 @@ byteArray_t fromBase64(const std::string& input)
         seq.fourth = charToIndex(input[i*4 + 0]);
 
         uint8_t val;
-        //if (input[i*4+3] != PADDING_CHAR && input[i*4+2] != PADDING_CHAR)
         memcpy(&val, (uint8_t*)(&seq)+2, 1);
         output.push_back(val);
-        //std::cout << "2: " << +val << '\n';
 
         memcpy(&val, (uint8_t*)(&seq)+1, 1);
         if (val != 0 || (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size()))
-        {
             output.push_back(val);
-            //std::cout << "1: " << +val << '\n';
-        }
         memcpy(&val, (uint8_t*)(&seq)+0, 1);
         if (val != 0 || (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size()))
-        {
             output.push_back(val);
-            //std::cout << "0: " << +val << '\n';
-        }
     }
 
     return output;
