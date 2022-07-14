@@ -1,4 +1,3 @@
-#include <stdexcept>
 #include <stdint.h>
 #include <cmath>
 #include <cassert>
@@ -22,7 +21,7 @@ static uint8_t indexToChar(uint index)
         return '/';
 
     assert(false);
-    throw std::runtime_error{""};
+    abort();
 }
 
 std::string encode(const byteArray_t& input, bool applyPadding/*=true*/)
@@ -69,7 +68,7 @@ static uint charToIndex(uint8_t ch)
     else if (ch == '/')
         return 63;
 
-    throw std::runtime_error{"Invalid Base64 character: '"+std::string{1, (char)ch}+"'"};
+    throw InvalidBase64CharException{"Invalid Base64 character: '"+std::string{1, (char)ch}+"'"};
 }
 
 byteArray_t decode(const std::string& input, bool needsPadding/*=false*/)
@@ -91,7 +90,7 @@ byteArray_t decode(const std::string& input, bool needsPadding/*=false*/)
         output.push_back(val);
 
         if (needsPadding && i*4+3 >= input.size())
-            throw std::runtime_error{"Input is not padded properly."};
+            throw InvalidPaddingException{"Input is not padded properly."};
 
         memcpy(&val, (uint8_t*)(&seq)+1, 1);
         if (val != 0 || (i*4+3 < input.size() && input[i*4+3] != BASE64_PADDING_CHAR))

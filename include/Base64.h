@@ -3,11 +3,40 @@
 #include <string>
 #include <stdint.h>
 #include <vector>
+#include <stdexcept>
 
 #define BASE64_PADDING_CHAR '='
 
 namespace Base64
 {
+
+class InvalidBase64CharException : public std::runtime_error
+{
+public:
+    InvalidBase64CharException(const char* what)
+        : std::runtime_error{what}
+    {
+    }
+
+    InvalidBase64CharException(const std::string& what)
+        : std::runtime_error{what}
+    {
+    }
+};
+
+class InvalidPaddingException : public std::runtime_error
+{
+public:
+    InvalidPaddingException(const char* what)
+        : std::runtime_error{what}
+    {
+    }
+
+    InvalidPaddingException(const std::string& what)
+        : std::runtime_error{what}
+    {
+    }
+};
 
 using byteArray_t = std::vector<uint8_t>;
 
