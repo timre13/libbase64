@@ -10,18 +10,18 @@ static bool checkEncoding(const std::string& input, const std::string& expected,
     input_.reserve(input.size());
     for (char val : input)
         input_.push_back(val);
-    const std::string decoded = Base64::toBase64(input_, usePadding);
+    const std::string encoded = Base64::encode(input_, usePadding);
 
-    std::cout << "Encoded:  '" << input << "'\nResult:   '" << decoded << "'\nExpected: '" << expected << "'\n";
+    std::cout << "Encoded:  '" << input << "'\nResult:   '" << encoded << "'\nExpected: '" << expected << "'\n";
 
-    const bool ok = (decoded == expected);
+    const bool ok = (encoded == expected);
     std::cout << (ok ? "\033[92mOK\033[0m" : "\033[91mFAIL\033[0m") << '\n';
     return ok;
 }
 
 static bool checkDecoding(const std::string& input, const std::string& expected)
 {
-    const Base64::byteArray_t output = Base64::fromBase64(input);
+    const Base64::byteArray_t output = Base64::decode(input);
     std::string output_;
     for (uint8_t val : output)
         output_.push_back(val);

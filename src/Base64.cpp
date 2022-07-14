@@ -25,7 +25,7 @@ static uint8_t indexToChar(uint index)
     throw std::runtime_error{""};
 }
 
-std::string toBase64(const byteArray_t& input, bool applyPadding/*=true*/)
+std::string encode(const byteArray_t& input, bool applyPadding/*=true*/)
 {
     std::string output;
 
@@ -45,12 +45,12 @@ std::string toBase64(const byteArray_t& input, bool applyPadding/*=true*/)
         if (seq.second != 0 || i != end-1)
             output += indexToChar(seq.second);
         else if (applyPadding)
-            output += PADDING_CHAR;
+            output += BASE64_PADDING_CHAR;
 
         if (seq.first != 0 || i != end-1)
             output += indexToChar(seq.first);
         else if (applyPadding)
-            output += PADDING_CHAR;
+            output += BASE64_PADDING_CHAR;
     }
 
     return output;
@@ -72,16 +72,16 @@ static uint charToIndex(uint8_t ch)
     throw std::runtime_error{"Invalid Base64 character: '"+std::string{1, (char)ch}+"'"};
 }
 
-byteArray_t fromBase64(const std::string& input)
+byteArray_t decode(const std::string& input)
 {
     byteArray_t output;
 
     for (size_t i{}; i < std::ceil(input.size()/4.f); ++i)
     {
         Sequence seq{};
-        if (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size())
+        if (input[i*4+3] != BASE64_PADDING_CHAR && i*4+3 < input.size())
             seq.first  = charToIndex(input[i*4 + 3]);
-        if (input[i*4+2] != PADDING_CHAR && i*4+2 < input.size())
+        if (input[i*4+2] != BASE64_PADDING_CHAR && i*4+2 < input.size())
             seq.second = charToIndex(input[i*4 + 2]);
         seq.third  = charToIndex(input[i*4 + 1]);
         seq.fourth = charToIndex(input[i*4 + 0]);
@@ -91,10 +91,10 @@ byteArray_t fromBase64(const std::string& input)
         output.push_back(val);
 
         memcpy(&val, (uint8_t*)(&seq)+1, 1);
-        if (val != 0 || (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size()))
+        if (val != 0 || (input[i*4+3] != BASE64_PADDING_CHAR && i*4+3 < input.size()))
             output.push_back(val);
         memcpy(&val, (uint8_t*)(&seq)+0, 1);
-        if (val != 0 || (input[i*4+3] != PADDING_CHAR && i*4+3 < input.size()))
+        if (val != 0 || (input[i*4+3] != BASE64_PADDING_CHAR && i*4+3 < input.size()))
             output.push_back(val);
     }
 
