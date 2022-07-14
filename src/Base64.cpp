@@ -79,10 +79,10 @@ byteArray_t decode(const std::string& input)
     for (size_t i{}; i < std::ceil(input.size()/4.f); ++i)
     {
         Sequence seq{};
-        if (input[i*4+3] != BASE64_PADDING_CHAR && i*4+3 < input.size())
-            seq.first  = charToIndex(input[i*4 + 3]);
-        if (input[i*4+2] != BASE64_PADDING_CHAR && i*4+2 < input.size())
-            seq.second = charToIndex(input[i*4 + 2]);
+        if (i*4+3 < input.size() && input[i*4+3] != BASE64_PADDING_CHAR)
+            seq.first = charToIndex(input[i*4+3]);
+        if (i*4+2 < input.size() && input[i*4+2] != BASE64_PADDING_CHAR)
+            seq.second = charToIndex(input[i*4+2]);
         seq.third  = charToIndex(input[i*4 + 1]);
         seq.fourth = charToIndex(input[i*4 + 0]);
 
@@ -91,10 +91,10 @@ byteArray_t decode(const std::string& input)
         output.push_back(val);
 
         memcpy(&val, (uint8_t*)(&seq)+1, 1);
-        if (val != 0 || (input[i*4+3] != BASE64_PADDING_CHAR && i*4+3 < input.size()))
+        if (val != 0 || (i*4+3 < input.size() && input[i*4+3] != BASE64_PADDING_CHAR))
             output.push_back(val);
         memcpy(&val, (uint8_t*)(&seq)+0, 1);
-        if (val != 0 || (input[i*4+3] != BASE64_PADDING_CHAR && i*4+3 < input.size()))
+        if (val != 0 || (i*4+3 < input.size() && input[i*4+3] != BASE64_PADDING_CHAR))
             output.push_back(val);
     }
 
